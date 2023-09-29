@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Fullscreen Webcam</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+  }
+  html{
+    width: 100%;
+    height: 100%;
+  }
+  body {
+    background-color: black;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  canvas{
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 233;
+    top: 0px;
+    left: 0px;
+  }
+</style>
+</head>
+
+<body>
+  <video autoplay="true"></video>
+  <canvas></canvas>
+  <script>
+var video = document.querySelector("video");
+var canvas = document.querySelector("canvas");
+var ctx = canvas.getContext('2d');
+
+if (navigator.mediaDevices.getUserMedia) {
+  navigator.mediaDevices.getUserMedia({video: true})
+  .then(stream => {
+    video.srcObject = stream;
+    video.onplay = function () {   // When the video starts playing
+                draw(this, ctx, 640, 480); // Call draw
+            };
+  })
+  .catch(videoError);
+}
+
+function draw(video, ctx, width, height) {
+    
+            if (video.paused || video.ended) return false;
+
+               // Resize the canvas to match the video's native resolution
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+
+            // Else, draw video frame on canvas
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // You can add any specific processing code here
+
+            // Continue drawing next frame
+            requestAnimationFrame(() => draw(video, ctx, width, height));
+        }
+
+function videoError(e) {
+  // You can put some error handling code here
+  console.log('Webcam error!', e);
+};
+  </script>
+</body>
+</html>
