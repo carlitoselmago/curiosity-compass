@@ -5,19 +5,7 @@ let procesimgsize=64;
 let params = 32;
 let size = 6;
 let size2 = 2//4;
-/*
-const model = tf.sequential();
-model.add(tf.layers.conv2d({filters: 64, kernelSize: 3, strides: 2, padding: 'same', activation: 'relu', inputShape: [64, 64, 1]}));
-model.add(tf.layers.conv2d({filters: 32, kernelSize: 3, strides: 2, padding: 'same', activation: 'relu'}));
 
-// Decoder
-model.add(tf.layers.conv2dTranspose({filters: 32, kernelSize: 3, strides: 2, padding: 'same', activation: 'relu'}));
-model.add(tf.layers.conv2dTranspose({filters: 64, kernelSize: 3, strides: 2, padding: 'same', activation: 'relu'}));
-model.add(tf.layers.conv2d({filters: 1, kernelSize: 3, padding: 'same', activation: 'sigmoid'}));
-
-model.compile({optimizer: 'adam', loss: 'binaryCrossentropy'});
-//console.log(model.summary());
-*/
 const model = tf.sequential();
 
 // Encoder
@@ -137,23 +125,7 @@ async function processVideoFrame() {
 
 // Start the video processing
 processVideoFrame();
-/*
-function draw(video, ctx, width, height) {
-    
-    if (video.paused || video.ended) return false;
 
-        // Resize the canvas to match the video's native resolution
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-
-    // Else, draw video frame on canvas
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    // You can add any specific processing code here
-
-    // Continue drawing next frame
-    requestAnimationFrame(() => draw(video, ctx, width, height));
-}
-*/
 function videoError(e) {
   // You can put some error handling code here
   console.log('Webcam error!', e);
