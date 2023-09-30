@@ -180,7 +180,8 @@ async function predict_and_calculate_mse(image) {
       let avg_mse=mse[0]/2000
       //let mseval=mse.dataSync()
       //let avg_mse = mse.mean().dataSync()[0]/2000;
-      console.log(avg_mse);
+      //console.log(avg_mse);
+      $("#data").html(avg_mse.toFixed(2));
       //console.log(mseval);
 
       //fit model 
