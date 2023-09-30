@@ -1,7 +1,21 @@
 //tf.setBackend('cpu');
 
+//HELPER FUNCTIONS
+function map(input,in_min, in_max, out_min, out_max) {
+  let res= (input - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+ // if (res>out_max){res=out_max;}
+  return res;
+}
+
+var lerp = function (oldValue, newValue, factor) {
+  return oldValue * (1 - factor) + newValue * factor;
+}
+
 // Procesimgsize needs its value here.
 let procesimgsize=64;
+let Cvalue=0; //curiosity value
+let Cvalue_old=0; // curiosity last value
+let itpl_factor=0.2 // interpolate factor
 
 window.working=false;
 
@@ -29,8 +43,12 @@ if (navigator.mediaDevices.getUserMedia) {
 let worker = new Worker("curiosity_worker.js");//,{type: 'module'});
 
 worker.onmessage = function(event){
-  $("#data").html(event.data);
+  let value=event.data;
+  
+  Cvalue=map(value,0, 30, 0, 100);
+  
   window.working=false;
+ 
 };
 
 async function runWorker(imageData){
@@ -57,6 +75,12 @@ async function processVideoFrame() {
         // Adjust canvas size
         canvas.width = newWidth;
         canvas.height = newHeight;
+
+        //UPDATE UI elements
+        let interpolatedvalue= lerp(Cvalue_old, Cvalue, itpl_factor); 
+      // $("#data").html(value);
+          $("#circle svg").css("transform","scale("+interpolatedvalue+")");
+          Cvalue_old= interpolatedvalue;
 
         //ctx.filter = 'blur(10px)';
 
@@ -86,3 +110,5 @@ function videoError(e) {
   // You can put some error handling code here
   console.log('Webcam error!', e);
 };
+
+
