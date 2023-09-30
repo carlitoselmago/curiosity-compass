@@ -27,18 +27,39 @@ navigator.mediaDevices.getUserMedia = navigator.mediaDevices.getUserMedia ||
 navigator.webkitGetUserMedia ||
 navigator.mozGetUserMedia;
 
-if (navigator.mediaDevices.getUserMedia) {
-  navigator.mediaDevices.getUserMedia({video: true})
-  .then(function(stream) {
-    video.srcObject = stream;
-    video.onloadedmetadata = function(e) {
-      video.play();
-    };
-  })
-  .catch(function(videoError) {
-   alert("Camera not available");
-  }); 
+var currentStream;
+var isFrontCamera = true;
+
+function stopCurrentStream(){
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => track.stop());
+  }
 }
+
+function toggleCamera(){
+  isFrontCamera = !isFrontCamera;
+  stopCurrentStream();
+  var constraints = { video: { facingMode: (isFrontCamera? "user" : "environment") } };
+  
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then(function(stream) {
+      currentStream = stream;
+      video.srcObject = stream;
+      video.onloadedmetadata = function(e) {
+        video.play();
+      };
+    })
+    .catch(function(err) {
+      console.log(err.name + ": " + err.message);
+    });
+}
+
+//initial setup
+toggleCamera();
+
+$("body").click(function(e){
+  toggleCamera();
+})
 
 let worker = new Worker("curiosity_worker.js");//,{type: 'module'});
 
