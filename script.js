@@ -1,78 +1,13 @@
 //tf.setBackend('cpu');
-//TS MODEL
+
 // Procesimgsize needs its value here.
 let procesimgsize=64;
-let params = 32;
-let size = 6;
-let size2 = 2//4;
 
 window.working=false;
 
-
-const model = tf.sequential();
-
-// Encoder
-model.add(tf.layers.conv2d({
-    filters: params,
-    kernelSize: [size, size],
-    activation: 'relu',
-    padding: 'same',
-    inputShape: [procesimgsize, procesimgsize, 1]
-}));
-model.add(tf.layers.maxPooling2d({
-    poolSize: [size2, size2],
-    padding: 'same'
-}));
-model.add(tf.layers.conv2d({
-    filters: params,
-    kernelSize: [size, size],
-    activation: 'relu',
-    padding: 'same'
-}));
-model.add(tf.layers.maxPooling2d({
-    poolSize: [size2, size2],
-    padding: 'same'
-}));
-
-// Decoder
-model.add(tf.layers.conv2d({
-    filters: params,
-    kernelSize: [size, size],
-    activation: 'relu',
-    padding: 'same'
-}));
-model.add(tf.layers.upSampling2d({
-    size: [size2, size2]
-}));
-model.add(tf.layers.conv2d({
-    filters: params,
-    kernelSize: [size, size],
-    activation: 'relu',
-    padding: 'same'
-}));
-model.add(tf.layers.upSampling2d({
-    size: [size2, size2]
-}));
-model.add(tf.layers.conv2d({
-    filters: 1,
-    kernelSize: [size, size],
-    activation: 'sigmoid',
-    padding: 'same'
-}));
-
-const compileArgs = {
-    optimizer: tf.train.adam(),
-    loss: 'binaryCrossentropy'  
-};
-model.compile(compileArgs);
-
-
-
-
-//let tf = require('@tensorflow/tfjs-node');
 var video = document.querySelector("video");
 var canvas = document.querySelector("canvas");
-var ctx = canvas.getContext('2d');
+var ctx = canvas.getContext('2d',{willReadFrequently: true});
 
 if (navigator.mediaDevices.getUserMedia) {
   navigator.mediaDevices.getUserMedia({video: true})
@@ -87,20 +22,20 @@ if (navigator.mediaDevices.getUserMedia) {
   });
 }
 
-function startWorker(model,tensor){
+let worker = new Worker("curiosity_worker.js");//,{type: 'module'});
+
+worker.onmessage = function(event){
+  $("#data").html(event.data);
+  window.working=false;
+};
+
+async function runWorker(imageData){
   window.working=true;
-  let worker = new Worker("curiosit_workers.js");
-  worker.postMessage()
-  worker.onmessage = function(event){
-    $("#data").html(event.data);
-    window.working=false
-  };
+ // console.log("run worker");
+  worker.postMessage(imageData);
 }
 
-
-
 async function processVideoFrame() {
-  
 
     if (!video.paused && !video.ended ) {
 
@@ -127,20 +62,14 @@ async function processVideoFrame() {
         // Get all image data from the resized frame
         var imageData = ctx.getImageData(0, 0, newWidth, newHeight);
         
-        // Convert the image data to a tensor
-        let tensor = tf.browser.fromPixels(imageData, 1).toFloat().expandDims();
-
-        // Resize it to model's required input size and convert to grayscale
-        tensor = tf.image.resizeBilinear(tensor, [procesimgsize, procesimgsize]);
-        tensor = tensor.mean(3).expandDims(3);
-        
         // Pass the tensor to your prediction function
         if (!window.working){
-          startWorker(model,tensor);
+          await runWorker(imageData);
+        } else { 
+          //console.log("worker busy");
         }
         //await predict_and_calculate_mse(tensor);
     }
-
     // Set up the next frame to be processed
     requestAnimationFrame(processVideoFrame);
   
@@ -153,40 +82,3 @@ function videoError(e) {
   // You can put some error handling code here
   console.log('Webcam error!', e);
 };
-
-/*
-
-async function predict_and_calculate_mse(image) {
-  try {
-    if (image){
-      const decoded_image = await model.predict(image); 
-
-      // Reshape decoded_image to shape of original image
-      const decoded_image_reshaped = decoded_image.reshape(image.shape);
-
-      // Calculate mean squared error
-      //const mse = tf.metrics.meanSquaredError(image, decoded_image_reshaped);
-      let mse = tf.tidy(() => {
-        let diff = image.sub(decoded_image_reshaped);
-        let squarred = diff.square();
-        return squarred.mean();
-      });
-      mse=  await mse.data();
-      let avg_mse=mse[0]/2000
-      //let mseval=mse.dataSync()
-      //let avg_mse = mse.mean().dataSync()[0]/2000;
-      //console.log(avg_mse);
-      $("#data").html(avg_mse.toFixed(2));
-      //console.log(mseval);
-
-      //fit model 
-      await model.fit(image, image, {epochs:5});
-
-     // return mseval;
-    }
- } catch (e) {
-      console.error("predict_and_calculate_mse EXCEPTION!!!:", e);
-      //this.end(); // If this is defined somewhere in your JS object
-  }
-}
-*/
