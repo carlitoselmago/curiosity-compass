@@ -9,6 +9,10 @@ var video = document.querySelector("video");
 var canvas = document.querySelector("canvas");
 var ctx = canvas.getContext('2d',{willReadFrequently: true});
 
+navigator.mediaDevices.getUserMedia = navigator.mediaDevices.getUserMedia ||
+navigator.webkitGetUserMedia ||
+navigator.mozGetUserMedia;
+
 if (navigator.mediaDevices.getUserMedia) {
   navigator.mediaDevices.getUserMedia({video: true})
   .then(function(stream) {
@@ -18,8 +22,8 @@ if (navigator.mediaDevices.getUserMedia) {
     };
   })
   .catch(function(videoError) {
-    console.error(videoError);
-  });
+   alert("Camera not available");
+  }); 
 }
 
 let worker = new Worker("curiosity_worker.js");//,{type: 'module'});
