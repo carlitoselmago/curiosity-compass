@@ -6,6 +6,9 @@ let params = 32;
 let size = 6;
 let size2 = 2//4;
 
+window.working=false;
+
+
 const model = tf.sequential();
 
 // Encoder
@@ -63,6 +66,9 @@ const compileArgs = {
 };
 model.compile(compileArgs);
 
+
+
+
 //let tf = require('@tensorflow/tfjs-node');
 var video = document.querySelector("video");
 var canvas = document.querySelector("canvas");
@@ -81,46 +87,63 @@ if (navigator.mediaDevices.getUserMedia) {
   });
 }
 
+function startWorker(model,tensor){
+  window.working=true;
+  let worker = new Worker("curiosit_workers.js");
+  worker.postMessage()
+  worker.onmessage = function(event){
+    $("#data").html(event.data);
+    window.working=false
+  };
+}
+
+
+
 async function processVideoFrame() {
   
-  if (!video.paused && !video.ended) {
 
-      // Get the video width and height as it might not be 640x480
-      let width = video.videoWidth;
-      let height = video.videoHeight;
+    if (!video.paused && !video.ended ) {
 
-      // Calculate image scale
-      let scale = Math.min(procesimgsize / width, procesimgsize / height);
+        // Get the video width and height as it might not be 640x480
+        let width = video.videoWidth;
+        let height = video.videoHeight;
 
-      // Calculate scaled image size
-      let newWidth = Math.floor(width * scale);
-      let newHeight = Math.floor(height * scale);
+        // Calculate image scale
+        let scale = Math.min(procesimgsize / width, procesimgsize / height);
 
-      // Adjust canvas size
-      canvas.width = newWidth;
-      canvas.height = newHeight;
+        // Calculate scaled image size
+        let newWidth = Math.floor(width * scale);
+        let newHeight = Math.floor(height * scale);
 
-      //ctx.filter = 'blur(10px)';
+        // Adjust canvas size
+        canvas.width = newWidth;
+        canvas.height = newHeight;
 
-      // Draw the video frame to canvas (scaled down)
-      ctx.drawImage(video, 0, 0, newWidth, newHeight);
+        //ctx.filter = 'blur(10px)';
 
-      // Get all image data from the resized frame
-      var imageData = ctx.getImageData(0, 0, newWidth, newHeight);
-      
-      // Convert the image data to a tensor
-      let tensor = tf.browser.fromPixels(imageData, 1).toFloat().expandDims();
+        // Draw the video frame to canvas (scaled down)
+        ctx.drawImage(video, 0, 0, newWidth, newHeight);
 
-      // Resize it to model's required input size and convert to grayscale
-      tensor = tf.image.resizeBilinear(tensor, [procesimgsize, procesimgsize]);
-      tensor = tensor.mean(3).expandDims(3);
-      
-      // Pass the tensor to your prediction function
-      await predict_and_calculate_mse(tensor);
-  }
+        // Get all image data from the resized frame
+        var imageData = ctx.getImageData(0, 0, newWidth, newHeight);
+        
+        // Convert the image data to a tensor
+        let tensor = tf.browser.fromPixels(imageData, 1).toFloat().expandDims();
 
-  // Set up the next frame to be processed
-  requestAnimationFrame(processVideoFrame);
+        // Resize it to model's required input size and convert to grayscale
+        tensor = tf.image.resizeBilinear(tensor, [procesimgsize, procesimgsize]);
+        tensor = tensor.mean(3).expandDims(3);
+        
+        // Pass the tensor to your prediction function
+        if (!window.working){
+          startWorker(model,tensor);
+        }
+        //await predict_and_calculate_mse(tensor);
+    }
+
+    // Set up the next frame to be processed
+    requestAnimationFrame(processVideoFrame);
+  
 }
 
 // Start the video processing
@@ -131,7 +154,7 @@ function videoError(e) {
   console.log('Webcam error!', e);
 };
 
-
+/*
 
 async function predict_and_calculate_mse(image) {
   try {
@@ -166,3 +189,4 @@ async function predict_and_calculate_mse(image) {
       //this.end(); // If this is defined somewhere in your JS object
   }
 }
+*/
