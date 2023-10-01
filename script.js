@@ -64,6 +64,7 @@ $("body").click(function(e){
 let worker = new Worker("curiosity_worker.js");//,{type: 'module'});
 
 worker.onmessage = function(event){
+  $("#loading").hide();
   let value=event.data;
   
   Cvalue=map(value,0, 30, 0, 100);

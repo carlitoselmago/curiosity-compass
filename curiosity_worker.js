@@ -4,6 +4,8 @@ let procesimgsize=64;
 let params = 32;
 let size = 6;
 let size2 = 2//4;
+let startTime = new Date();
+let mintimebetwenfit_seconds=0.3;
 
 const model = tf.sequential();
 
@@ -91,8 +93,18 @@ self.onmessage= async (e) => {
     mse=  await mse.data();
     let avg_mse=mse[0]*2000;
     
-    //fit model 
-    await  model.fit(tensor, tensor, {epochs:1});
+    //don't fit each iteration
+   
+    let endTime = new Date();
+    let timeElapsed = endTime - startTime;
+    timeElapsed= ((timeElapsed % 60000) / 1000).toFixed(0);
+    if (timeElapsed > mintimebetwenfit_seconds){
+         //fit model 
+        await  model.fit(tensor, tensor, {epochs:1});
+        startTime=new Date();
+    } 
+    
+   
     postMessage(avg_mse.toFixed(2));
 }
 
